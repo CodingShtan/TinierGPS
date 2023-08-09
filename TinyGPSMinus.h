@@ -1,5 +1,5 @@
 /*
-TinyGPS - a small GPS library for Arduino providing basic NMEA parsing
+TinyGPSMinus - a small GPS library for Arduino providing basic NMEA parsing
 Based on work by and "distance_to" and "course_to" courtesy of Maarten Lamers.
 Suggestion to add satellites(), course_to(), and cardinal(), by Matt Monson.
 Precision improvements suggested by Wayne Holder.
@@ -21,8 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef TinyGPS_h
-#define TinyGPS_h
+#ifndef TinyGPSMinus_h
+#define TinyGPSMinus_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -32,34 +32,36 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
 
-#define _GPS_VERSION 13 // software version of this library
 #define _GPS_MPH_PER_KNOT 1.15077945
 #define _GPS_MPS_PER_KNOT 0.51444444
 #define _GPS_KMPH_PER_KNOT 1.852
 #define _GPS_MILES_PER_METER 0.00062137112
 #define _GPS_KM_PER_METER 0.001
+#define _GPS_INVALID_LATITUDE "0000.00N"
+#define _GPS_INVALID_LONGITUDE "00000.00W"
 // #define _GPS_NO_STATS
 
-class TinyGPS
+class TinyGPSMinus
 {
 public:
   enum {
     GPS_INVALID_AGE = 0xFFFFFFFF,      GPS_INVALID_ANGLE = 999999999, 
     GPS_INVALID_ALTITUDE = 999999999,  GPS_INVALID_DATE = 0,
     GPS_INVALID_TIME = 0xFFFFFFFF,		 GPS_INVALID_SPEED = 999999999, 
-    GPS_INVALID_FIX_TIME = 0xFFFFFFFF, GPS_INVALID_SATELLITES = 0xFF,
-    GPS_INVALID_HDOP = 0xFFFFFFFF
+    GPS_INVALID_FIX_TIME = 0xFFFFFFFF, GPS_INVALID_HDOP = 0xFFFFFFFF
   };
 
-  static const float GPS_INVALID_F_ANGLE, GPS_INVALID_F_ALTITUDE, GPS_INVALID_F_SPEED;
+  static const float GPS_INVALID_F_ANGLE, GPS_INVALID_F_ALTITUDE, GPS_INVALID_F_SPEED, GPS_INVALID_F_HDOP;
 
-  TinyGPS();
+  TinyGPSMinus();
   bool encode(char c); // process one character received from GPS
-  TinyGPS &operator << (char c) {encode(c); return *this;}
+  TinyGPSMinus &operator << (char c) {encode(c); return *this;}
 
-  // lat/long in MILLIONTHs of a degree and age of fix in milliseconds
-  // (note: versions 12 and earlier gave lat/long in 100,000ths of a degree.
-  void get_position(long *latitude, long *longitude, unsigned long *fix_age = 0);
+  char * get_latitude();
+  char * get_longitude();
+  void get_pos_age(unsigned long *fix_age = 0);
+
+  void update_ambiguity();
 
   // date as ddmmyy, time as hhmmsscc, and age in milliseconds
   void get_datetime(unsigned long *date, unsigned long *time, unsigned long *age = 0);
@@ -73,26 +75,23 @@ public:
   // speed in last full GPRMC sentence in 100ths of a knot
   inline unsigned long speed() { return _speed; }
 
-  // satellites used in last full GPGGA sentence
-  inline unsigned short satellites() { return _numsats; }
-
   // horizontal dilution of precision in 100ths
   inline unsigned long hdop() { return _hdop; }
 
-  void f_get_position(float *latitude, float *longitude, unsigned long *fix_age = 0);
+  // get ambiguity in meters
+  inline float ambiguity() { return _ambiguity; }
+
   void crack_datetime(int *year, byte *month, byte *day, 
     byte *hour, byte *minute, byte *second, byte *hundredths = 0, unsigned long *fix_age = 0);
   float f_altitude();
   float f_course();
+  float f_hdop();
+  float f_ambiguity();
   float f_speed_knots();
   float f_speed_mph();
   float f_speed_mps();
   float f_speed_kmph();
 
-  static int library_version() { return _GPS_VERSION; }
-
-  static float distance_between (float lat1, float long1, float lat2, float long2);
-  static float course_to (float lat1, float long1, float lat2, float long2);
   static const char *cardinal(float course);
 
 #ifndef _GPS_NO_STATS
@@ -100,21 +99,21 @@ public:
 #endif
 
 private:
-  enum {_GPS_SENTENCE_GPGGA, _GPS_SENTENCE_GPRMC, _GPS_SENTENCE_OTHER};
+  enum {_GGA_SENTENCE, _GLL_SENTENCE, _RMC_SENTENCE, _VTG_SENTENCE, _OTHER_SENTENCE};
 
   // properties
-  unsigned long _time, _new_time;
-  unsigned long _date, _new_date;
-  long _latitude, _new_latitude;
-  long _longitude, _new_longitude;
-  long _altitude, _new_altitude;
-  unsigned long  _speed, _new_speed;
-  unsigned long  _course, _new_course;
-  unsigned long  _hdop, _new_hdop;
-  unsigned short _numsats, _new_numsats;
+  unsigned long _time;
+  unsigned long _date;
+  char _latitude[9];
+  char _longitude[10];
+  long _altitude;
+  unsigned long  _speed;
+  unsigned long  _course;
+  unsigned long  _hdop;
+  float _ambiguity;
 
-  unsigned long _last_time_fix, _new_time_fix;
-  unsigned long _last_position_fix, _new_position_fix;
+  unsigned long _last_time_fix;
+  unsigned long _last_position_fix;
 
   // parsing state variables
   byte _parity;
@@ -123,7 +122,7 @@ private:
   byte _sentence_type;
   byte _term_number;
   byte _term_offset;
-  bool _gps_data_good;
+  bool _data_good;
 
 #ifndef _GPS_NO_STATS
   // statistics
@@ -136,7 +135,8 @@ private:
   // internal utilities
   int from_hex(char a);
   unsigned long parse_decimal();
-  unsigned long parse_degrees();
+  void parse_latitude();
+  void parse_longitude();
   bool term_complete();
   bool gpsisdigit(char c) { return c >= '0' && c <= '9'; }
   long gpsatol(const char *str);
