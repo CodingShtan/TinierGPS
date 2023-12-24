@@ -137,7 +137,7 @@ unsigned long TinyGPSMinus::parse_decimal() {
 
 // Parse string in form ddmm.hhhh and convert to char array in form ddmm.hhN
 void TinyGPSMinus::parse_latitude() {
-  // first 6 are unchanged
+  /*
   for (int i = 0; i < 6; i++) {
     _latitude[i] = _term[i];
   }
@@ -154,10 +154,12 @@ void TinyGPSMinus::parse_latitude() {
 
   // null terminate
   _latitude[8] = '\0';
+  */
 }
 
 // Parse string in form dddmm.hhhh and convert to char array in form dddmm.hhW
 void TinyGPSMinus::parse_longitude() {
+  /*
   // first 7 are unchanged
   for (int i = 0; i < 7; i++) {
     _longitude[i] = _term[i];
@@ -175,6 +177,7 @@ void TinyGPSMinus::parse_longitude() {
 
   // null terminate
   _longitude[9] = '\0';
+  */
 }
 
 void TinyGPSMinus::update_ambiguity() {
