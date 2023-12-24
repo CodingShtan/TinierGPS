@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "TinyGPSMinus.h"
+#include "TinierGPS.h"
 
 // NMEA Sentence identifiers:
 #define _GGA_TERM   "GGA"
@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define _RMC_TERM   "RMC"
 #define _VTG_TERM   "VTG"
 
-TinyGPSMinus::TinyGPSMinus()
+TinierGPS::TinierGPS()
   :  _time(GPS_INVALID_TIME)
   ,  _date(GPS_INVALID_DATE)
   ,  _latitude(_GPS_INVALID_LATITUDE)
@@ -60,7 +60,7 @@ TinyGPSMinus::TinyGPSMinus()
 // public methods
 //
 
-bool TinyGPSMinus::encode(char c) {
+bool TinierGPS::encode(char c) {
   bool valid_sentence = false;
 
   #ifndef _GPS_NO_STATS
@@ -100,7 +100,7 @@ bool TinyGPSMinus::encode(char c) {
 }
 
 #ifndef _GPS_NO_STATS
-  void TinyGPSMinus::stats(unsigned long *chars, unsigned short *sentences, unsigned short *failed_cs) {
+  void TinierGPS::stats(unsigned long *chars, unsigned short *sentences, unsigned short *failed_cs) {
     if (chars) *chars = _encoded_characters;
     if (sentences) *sentences = _good_sentences;
     if (failed_cs) *failed_cs = _failed_checksum;
@@ -110,7 +110,7 @@ bool TinyGPSMinus::encode(char c) {
 //
 // internal utilities
 //
-int TinyGPSMinus::from_hex(char a) {
+int TinierGPS::from_hex(char a) {
   if (a >= 'A' && a <= 'F')
     return a - 'A' + 10;
   else if (a >= 'a' && a <= 'f')
@@ -119,7 +119,7 @@ int TinyGPSMinus::from_hex(char a) {
     return a - '0';
 }
 
-unsigned long TinyGPSMinus::parse_decimal() {
+unsigned long TinierGPS::parse_decimal() {
   char *p = _term;
   bool isneg = *p == '-';
   if (isneg) ++p;
@@ -136,7 +136,7 @@ unsigned long TinyGPSMinus::parse_decimal() {
 }
 
 // Parse string in form ddmm.hhhh and convert to char array in form ddmm.hhN
-void TinyGPSMinus::parse_latitude() {
+void TinierGPS::parse_latitude() {
   /*
   for (int i = 0; i < 6; i++) {
     _latitude[i] = _term[i];
@@ -158,7 +158,7 @@ void TinyGPSMinus::parse_latitude() {
 }
 
 // Parse string in form dddmm.hhhh and convert to char array in form dddmm.hhW
-void TinyGPSMinus::parse_longitude() {
+void TinierGPS::parse_longitude() {
   /*
   // first 7 are unchanged
   for (int i = 0; i < 7; i++) {
@@ -180,7 +180,7 @@ void TinyGPSMinus::parse_longitude() {
   */
 }
 
-void TinyGPSMinus::update_ambiguity() {
+void TinierGPS::update_ambiguity() {
   _ambiguity = 5.0 * f_hdop(); // gives very rough horizontal ambiguity in meters
   
   // https://www.usna.edu/Users/oceano/pguth/md_help/html/approx_equivalents.htm
@@ -235,7 +235,7 @@ void TinyGPSMinus::update_ambiguity() {
 
 // Processes a just-completed term
 // Returns true if new sentence has just passed checksum test and is validated
-bool TinyGPSMinus::term_complete() {
+bool TinierGPS::term_complete() {
   // if sentence is over, confirm it is good and return
   if (_is_checksum_term) {
     byte checksum = 16 * from_hex(_term[0]) + from_hex(_term[1]);
@@ -329,14 +329,14 @@ bool TinyGPSMinus::term_complete() {
   return false;
 }
 
-long TinyGPSMinus::gpsatol(const char *str) {
+long TinierGPS::gpsatol(const char *str) {
   long ret = 0;
   while (gpsisdigit(*str))
     ret = 10 * ret + *str++ - '0';
   return ret;
 }
 
-int TinyGPSMinus::gpsstrcmp(const char *str1, const char *str2) {
+int TinierGPS::gpsstrcmp(const char *str1, const char *str2) {
   // throw out first two talker ID characters
   str1 += 2;
   while (*str1 && *str1 == *str2)
@@ -344,7 +344,7 @@ int TinyGPSMinus::gpsstrcmp(const char *str1, const char *str2) {
   return *str1;
 }
 
-const char *TinyGPSMinus::cardinal (float course) {
+const char *TinierGPS::cardinal (float course) {
   // TODO: could store in PROGMEM instead of RAM?
   static const char* directions[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
 
@@ -352,26 +352,26 @@ const char *TinyGPSMinus::cardinal (float course) {
   return directions[direction % 16];
 }
 
-char * TinyGPSMinus::get_latitude() {
+char * TinierGPS::get_latitude() {
   return _latitude;
 }
 
-char * TinyGPSMinus::get_longitude() {
+char * TinierGPS::get_longitude() {
   return _longitude;
 }
 
-void TinyGPSMinus::get_pos_age(unsigned long *fix_age) {
+void TinierGPS::get_pos_age(unsigned long *fix_age) {
   if (fix_age) *fix_age = _last_position_fix == GPS_INVALID_FIX_TIME ? GPS_INVALID_AGE : millis() - _last_position_fix;
 }
 
 // date as ddmmyy, time as hhmmsscc, and age in milliseconds
-void TinyGPSMinus::get_datetime(unsigned long *date, unsigned long *time, unsigned long *age) {
+void TinierGPS::get_datetime(unsigned long *date, unsigned long *time, unsigned long *age) {
   if (date) *date = _date;
   if (time) *time = _time;
   if (age) *age = _last_time_fix == GPS_INVALID_FIX_TIME ? GPS_INVALID_AGE : millis() - _last_time_fix;
 }
 
-void TinyGPSMinus::crack_datetime(int *year, byte *month, byte *day, byte *hour, byte *minute, byte *second, byte *hundredths, unsigned long *age) {
+void TinierGPS::crack_datetime(int *year, byte *month, byte *day, byte *hour, byte *minute, byte *second, byte *hundredths, unsigned long *age) {
   unsigned long date, time;
   get_datetime(&date, &time, age);
   if (year) {
@@ -386,42 +386,42 @@ void TinyGPSMinus::crack_datetime(int *year, byte *month, byte *day, byte *hour,
   if (hundredths) *hundredths = time % 100;
 }
 
-float TinyGPSMinus::f_altitude() {
+float TinierGPS::f_altitude() {
   return _altitude == GPS_INVALID_ALTITUDE ? GPS_INVALID_F_ALTITUDE : _altitude / 100.0;
 }
 
-float TinyGPSMinus::f_course() {
+float TinierGPS::f_course() {
   return _course == GPS_INVALID_ANGLE ? GPS_INVALID_F_ANGLE : _course / 100.0;
 }
 
-float TinyGPSMinus::f_hdop() {
+float TinierGPS::f_hdop() {
   return _hdop == GPS_INVALID_HDOP ? GPS_INVALID_F_HDOP : _hdop / 100.0;
 }
 
-float TinyGPSMinus::f_ambiguity() {
+float TinierGPS::f_ambiguity() {
   return _ambiguity;
 }
 
-float TinyGPSMinus::f_speed_knots() {
+float TinierGPS::f_speed_knots() {
   return _speed == GPS_INVALID_SPEED ? GPS_INVALID_F_SPEED : _speed / 100.0;
 }
 
-float TinyGPSMinus::f_speed_mph() { 
+float TinierGPS::f_speed_mph() { 
   float sk = f_speed_knots();
   return sk == GPS_INVALID_F_SPEED ? GPS_INVALID_F_SPEED : _GPS_MPH_PER_KNOT * sk; 
 }
 
-float TinyGPSMinus::f_speed_mps() { 
+float TinierGPS::f_speed_mps() { 
   float sk = f_speed_knots();
   return sk == GPS_INVALID_F_SPEED ? GPS_INVALID_F_SPEED : _GPS_MPS_PER_KNOT * sk; 
 }
 
-float TinyGPSMinus::f_speed_kmph() { 
+float TinierGPS::f_speed_kmph() { 
   float sk = f_speed_knots();
   return sk == GPS_INVALID_F_SPEED ? GPS_INVALID_F_SPEED : _GPS_KMPH_PER_KNOT * sk; 
 }
 
-const float TinyGPSMinus::GPS_INVALID_F_ANGLE = 1000.0;
-const float TinyGPSMinus::GPS_INVALID_F_ALTITUDE = 1000000.0;
-const float TinyGPSMinus::GPS_INVALID_F_SPEED = -1.0;
-const float TinyGPSMinus::GPS_INVALID_F_HDOP = 100.0;
+const float TinierGPS::GPS_INVALID_F_ANGLE = 1000.0;
+const float TinierGPS::GPS_INVALID_F_ALTITUDE = 1000000.0;
+const float TinierGPS::GPS_INVALID_F_SPEED = -1.0;
+const float TinierGPS::GPS_INVALID_F_HDOP = 100.0;
