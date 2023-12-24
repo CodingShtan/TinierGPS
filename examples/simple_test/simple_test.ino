@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-#include <TinyGPSMinus.h>
+#include <TinierGPS.h>
 
 /* This sample code demonstrates the normal use of a TinyGPS object.
    It requires the use of SoftwareSerial, and assumes that you have a
@@ -11,16 +11,16 @@
 #define TXPIN -1 // unused
 #define GPSBAUD 9600
 
-TinyGPSMinus gps;
+TinierGPS gps;
 SoftwareSerial ss(RXPIN, TXPIN);
 
 void setup() {
   Serial.begin(115200);
   ss.begin(GPSBAUD);
   
-  Serial.println(F("Testing TinyGPSMinus static object"));
+  Serial.println(F("Testing TinierGPS static object"));
   Serial.print(F("Sizeof(gpsobject) = "));
-  Serial.print(sizeof(TinyGPSMinus));
+  Serial.print(sizeof(TinierGPS));
   Serial.println(F(" bytes"));
   Serial.println();
 }
